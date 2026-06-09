@@ -48,11 +48,19 @@ All sources are **unofficial** student/alumni guides (blogs, Her Campus, lifesty
      numbers fit the structure of your documents.
      A review-heavy corpus warrants different chunking than a long FAQ. -->
 
-**Chunk size:**
+**Approach: semantic chunking** (split on meaning, not on a fixed character count).
 
-**Overlap:**
+**How it works:** Each document is split into sentences. Each sentence is embedded with the same model used for retrieval (`all-MiniLM-L6-v2`). We walk the sentences in order and compute the cosine distance between each adjacent pair; a chunk **boundary** is inserted wherever that distance exceeds the **90th percentile** of distances within the document (i.e., where the topic visibly shifts). Consecutive semantically-similar sentences stay together in one chunk. Chunking never crosses a document boundary.
 
-**Reasoning:**
+**Chunk size:** Variable (that's the point) — but bounded by guardrails:
+- **Max ~180 words (~256 tokens):** `all-MiniLM-L6-v2` silently truncates input beyond 256 tokens, so any chunk over that cap is force-split at the next sentence boundary. This keeps every chunk fully embeddable.
+- **Min ~2 sentences / ~40 words:** chunks smaller than this are merged forward into the next one, so we don't get a stranded one-line fragment.
+
+**Overlap:** None in the fixed-window sense. Boundaries fall at natural topic shifts, so a fact is unlikely to be cut mid-thought. To preserve provenance instead of lexical overlap, **each chunk is prepended with its document's source + topic header** (e.g., `[Source: Her Campus | Topic: Dorms]`) before embedding — so a bare bullet like "individual thermostats, piano…" still carries the context of *which* document and topic it came from.
+
+**Reasoning:** The corpus is heterogeneous — long-form guides with many sub-topics (doc 01 spans resources → food → housing → jobs) mixed with lists of atomic facts (each dorm in doc 02, each study spot in doc 04). A fixed character window would cut a dorm's description in half; one-chunk-per-document would bury "J2 is the buffet" inside a 2,000-word blob. Semantic chunking adapts the boundary to the content: it keeps a single study-spot entry whole, and it splits the big guide at real topic transitions. The header-prepend is what protects the atomic-fact case and powers source attribution downstream.
+
+> Stretch idea (noted per instructions): compare semantic chunking against fixed-size and structure-aware (`===` header) chunking on the same 5 questions — this is the "Chunking Strategy Comparison" stretch feature.
 
 ---
 
@@ -64,11 +72,15 @@ All sources are **unofficial** student/alumni guides (blogs, Her Campus, lifesty
      would you weigh in choosing a different embedding model — context length, multilingual
      support, accuracy on domain-specific text, latency? -->
 
-**Embedding model:**
+**Embedding model:** `all-MiniLM-L6-v2` via `sentence-transformers` — runs locally, no API key or rate limits, 384-dim vectors, fast on CPU. The same model embeds sentences during chunking, the chunks at index time, and the query at search time, so everything lives in one consistent vector space. Its main limitation is the **256-token input cap**, which is exactly why the chunking guardrail caps chunk size at ~180 words.
 
-**Top-k:**
+**Top-k:** 5. Question 3 ("where can I study late at night?") pulls correct pieces from three different documents (Bennu, PCL, Lola Savannah), so we need enough chunks to cover a multi-source answer — but with ~150-word chunks, going much higher floods the LLM with off-topic text and makes the parking-ticket failure case (Q5) harder to keep honest. 5 is the balance; the generation prompt will also be told to ignore retrieved chunks that don't actually answer the question.
 
-**Production tradeoff reflection:**
+**Production tradeoff reflection:** If this were deployed for real students and cost weren't a constraint, I'd weigh:
+- **Accuracy on domain-specific text:** A larger general model (e.g., OpenAI `text-embedding-3-large`, or Voyage/Cohere embeddings) would likely retrieve better on slangy, abbreviation-heavy student writing ("J2", "the Drag", "PCL") that MiniLM may under-represent. Worth A/B-testing against MiniLM on the eval set before paying for it.
+- **Context length:** MiniLM's 256-token cap forces small chunks. A long-context embedding model (8k+ tokens) would let me embed an entire section — or a whole short guide — as one vector, simplifying chunking and preserving more context, at higher cost and latency.
+- **Latency & local vs API:** Local MiniLM has zero per-query cost and no network hop — great for a class project and for privacy. An API model adds latency and per-token cost but offloads compute and upgrades automatically. For a student-facing tool I'd probably keep embeddings **local** (privacy + cost) unless retrieval quality measurably needed the upgrade.
+- **Multilingual support:** Not needed here (English-only UT content), but if the guide expanded to international-student forums, a multilingual model (e.g., `paraphrase-multilingual-MiniLM` or Cohere multilingual) would matter.
 
 ---
 
@@ -95,9 +107,11 @@ All sources are **unofficial** student/alumni guides (blogs, Her Campus, lifesty
      Consider: noisy or inconsistent documents, missing source attribution, off-topic
      retrieval, chunks that split key information across boundaries. -->
 
-1.
+1. **Topically-adjacent retrieval on out-of-scope questions (our Q5).** "How do I appeal a parking ticket?" shares heavy vocabulary with the transportation document (permits, parking, R/S/C). Semantic search will confidently return that chunk even though it never explains an appeals process, and the LLM may then hallucinate a plausible-sounding procedure. Mitigation: a grounding prompt that instructs the model to answer only from retrieved text and to say "the guides don't cover this" when they don't, plus surfacing the retrieved sources so the gap is visible.
 
-2.
+2. **Redundant + conflicting sources.** Some topics are covered by two documents on purpose (two study-spot lists, two packing lists), and one source (doc 01) is from 2019 and may be stale (e.g., "laundry is free," meal-plan details that doc 03 updates for Fall 2025). Retrieval may return near-duplicate chunks (wasting top-k slots) or two chunks that mildly disagree. Mitigation: keep source + topic headers on every chunk so the model can attribute and, where needed, hedge ("according to the 2019 guide…"); consider de-duplicating very similar chunks later.
+
+3. **Lost-context atomic facts.** A single bullet ("individual thermostats, piano…") is meaningless without the dorm name from its heading. If chunking strands it, retrieval can surface the right text attached to the wrong entity. Mitigation: the header-prepend in the chunking spec, and semantic boundaries that tend to keep a labeled list item intact.
 
 ---
 
@@ -108,6 +122,19 @@ All sources are **unofficial** student/alumni guides (blogs, Her Campus, lifesty
      Label each stage with the tool or library you're using.
      You can use ASCII art, a Mermaid diagram, or embed a sketch as an image.
      You'll use this diagram as context when prompting AI tools to implement each stage. -->
+
+```mermaid
+flowchart TD
+    A["1. Document Ingestion<br/>documents/*.txt — 10 unofficial guides<br/>Python loader; strip nav/ads; keep source+topic header"]
+      --> B["2. Chunking<br/>Semantic chunking<br/>sentence embeddings via all-MiniLM-L6-v2<br/>boundary at 90th-pctile cosine distance<br/>max ~180 words, header prepended"]
+    B --> C["3. Embedding + Vector Store<br/>Embed chunks with all-MiniLM-L6-v2 (384-dim)<br/>Store vectors + metadata in ChromaDB (local)"]
+    Q["User query<br/>(CLI / notebook interface)"] --> D
+    C --> D["4. Retrieval<br/>Embed query (all-MiniLM-L6-v2)<br/>ChromaDB cosine similarity, top-k = 5"]
+    D --> E["5. Generation<br/>Groq llama-3.3-70b-versatile<br/>grounded prompt: answer only from retrieved chunks<br/>+ source attribution"]
+    E --> F["Cited answer to user"]
+```
+
+**Stage → tool summary:** Ingestion = Python + custom loader · Chunking = sentence-transformers (`all-MiniLM-L6-v2`) semantic splitter · Embedding/Store = `all-MiniLM-L6-v2` + ChromaDB · Retrieval = ChromaDB similarity (top-k 5) · Generation = Groq `llama-3.3-70b-versatile`.
 
 ---
 
