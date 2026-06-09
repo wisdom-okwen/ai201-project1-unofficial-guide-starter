@@ -123,16 +123,7 @@ All sources are **unofficial** student/alumni guides (blogs, Her Campus, lifesty
      You can use ASCII art, a Mermaid diagram, or embed a sketch as an image.
      You'll use this diagram as context when prompting AI tools to implement each stage. -->
 
-```mermaid
-flowchart TD
-    A["1. Document Ingestion<br/>documents/*.txt — 10 unofficial guides<br/>Python loader; strip nav/ads; keep source+topic header"]
-      --> B["2. Chunking<br/>Semantic chunking<br/>sentence embeddings via all-MiniLM-L6-v2<br/>boundary at 90th-pctile cosine distance<br/>max ~180 words, header prepended"]
-    B --> C["3. Embedding + Vector Store<br/>Embed chunks with all-MiniLM-L6-v2 (384-dim)<br/>Store vectors + metadata in ChromaDB (local)"]
-    Q["User query<br/>(CLI / notebook interface)"] --> D
-    C --> D["4. Retrieval<br/>Embed query (all-MiniLM-L6-v2)<br/>ChromaDB cosine similarity, top-k = 5"]
-    D --> E["5. Generation<br/>Groq llama-3.3-70b-versatile<br/>grounded prompt: answer only from retrieved chunks<br/>+ source attribution"]
-    E --> F["Cited answer to user"]
-```
+![Pipeline architecture: Document Ingestion → Chunking (semantic) → Embedding (all-MiniLM-L6-v2) + Vector Store (ChromaDB) → Retrieval ← User Query → Generation → Cited Answer](images/architecture.png)
 
 **Stage → tool summary:** Ingestion = Python + custom loader · Chunking = sentence-transformers (`all-MiniLM-L6-v2`) semantic splitter · Embedding/Store = `all-MiniLM-L6-v2` + ChromaDB · Retrieval = ChromaDB similarity (top-k 5) · Generation = Groq `llama-3.3-70b-versatile`.
 
