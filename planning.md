@@ -9,6 +9,10 @@
 
 ## Domain
 
+**An unofficial freshman survival guide for the University of Texas at Austin** — the practical, lived-experience knowledge students pass to each other about housing, dining, studying, getting around, packing, and navigating campus.
+
+This system makes student- and alumni-generated survival advice searchable and answerable: a user asks something like "Which dining hall is all-you-can-eat?" or "Where can I study late at night near campus?" and gets a grounded answer drawn from real student blogs, Her Campus articles, and unofficial guides. This knowledge is hard to find through official channels because the university's own pages (orientation.utexas.edu, housing.utexas.edu) tell you the *rules and logistics* but not the *insider tips* — that J2 is the buffet and Jester City Limits charges per dish, that the dorms are notoriously freezing, that Bennu Coffee is open 24 hours, or that a campus parking permit is jokingly called a "hunting license." That tacit knowledge lives only in what students write for each other, scattered across dozens of blogs, forum threads, and articles that you can't query in plain language.
+
 <!-- What domain did you choose? Why is this knowledge valuable and hard to find through official channels? -->
 
 ---
@@ -18,18 +22,22 @@
 <!-- List your specific sources: URLs, subreddit names, forum threads, or file descriptions.
      Aim for at least 10 sources that together cover different subtopics or perspectives within your domain. -->
 
-| # | Source | Description | URL or location |
-|---|--------|-------------|-----------------|
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
-| 7 | | | |
-| 8 | | | |
-| 9 | | | |
-| 10 | | | |
+All sources are **unofficial** student/alumni guides (blogs, Her Campus, lifestyle sites) — deliberately *not* the university's own pages, since the goal is the "real" knowledge rather than the official kind. Sources were chosen to cover distinct subtopics (general survival, dorms, dining, study spots, transportation, admissions, orientation, packing) so the corpus answers a range of questions. Some topics are intentionally covered by two sources (study spots, packing) so retrieval can be tested on agreeing-vs-conflicting sources. Each document was cleaned of navigation, ads, and sidebars during ingestion; a source header (site + URL + topic) is kept at the top of every file for citation.
+
+| # | Source | Topic | URL or location |
+|---|--------|-------|-----------------|
+| 1 | robinmorph (student blog) — "A Freshman's Exhaustive Guide to UT Austin" | General survival (resources, food, housing, jobs, places) | documents/01_freshman_exhaustive_guide.txt — [link](https://robinmorph.wordpress.com/2019/09/02/a-freshmans-exhaustive-guide-to-ut-austin-2019-edition/) |
+| 2 | Her Campus (Texas) — "A Comparison of the UT Austin Dorms" | Dorm comparison | documents/02_dorms_comparison.txt — [link](https://www.hercampus.com/school/texas/comparison-ut-austin-dorms/) |
+| 3 | Rambler ATX — "Ultimate Guide to UT Austin Meal Plans" | Dining / meal plans | documents/03_meal_plans.txt — [link](https://www.rambleratx.com/resources/guide-ut-austin-meal-plans/) |
+| 4 | Rambler ATX — "9 Best Study Spots Near UT Austin" | Study spots (on + off campus) | documents/04_study_spots_campus.txt — [link](https://www.rambleratx.com/resources/best-study-spots-ut-austin/) |
+| 5 | Mount Bonnell / Longhorn Life — "10 Best Off-Campus Study Spots" | Off-campus study spots | documents/05_study_spots_offcampus.txt — [link](https://www.mountbonnell.info/longhorn-life/10-best-places-to-study-off-campus-in-austin) |
+| 6 | Tex Admissions — "Sensible Advice for Freshmen and Sophomores" | Admissions / pre-college advice | documents/06_admissions_advice.txt — [link](https://www.texadmissions.com/blog/2025/7/4/advice-for-freshmen-and-sophomores-targeting-ut-austin) |
+| 7 | Mount Bonnell / Longhorn Life — "6 Tips for Navigating UT Transportation" | Transportation / getting around | documents/07_transportation.txt — [link](https://www.mountbonnell.info/longhorn-life/6-tips-for-navigating-ut-austins-transportation-options) |
+| 8 | Society19 — "10 Things I Wish I Knew Before Orientation" | Orientation / class registration | documents/08_orientation_tips.txt — [link](https://www.society19.com/orientation-at-ut-austin/) |
+| 9 | Humans of University — "UT at Austin Packing List" | Dorm packing / move-in | documents/09_packing_list.txt — [link](https://humansofuniversity.com/university-of-texas-at-austin/ut-at-austin-packing-list-move-in-day/) |
+| 10 | Her Campus (Texas) — "Your Ultimate Dorm Packing List" | Dorm packing essentials | documents/10_dorm_packing_essentials.txt — [link](https://www.hercampus.com/school/texas/your-ultimate-dorm-packing-list/) |
+
+> Collection note: ~4 candidate sources (a 2019 alumni list, Prked guides, BurntXOrange) returned 403/404 to the fetcher and were dropped. Reddit threads were not directly fetchable. This is a real constraint of API-based collection worth recording for the README.
 
 ---
 
@@ -73,11 +81,11 @@
 
 | # | Question | Expected answer |
 |---|----------|-----------------|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
+| 1 | At the dining halls, how should I pay to get a discount, and why do students say to avoid Jester City Limits? | Use **Dine-In Dollars** rather than cash/credit for a UT discount of about **$3 per meal**. Jester City Limits charges **per dish**, so students recommend going one floor up to **J2**, the all-you-can-eat buffet, instead. *(doc 01)* |
+| 2 | How much does the optional Flex Meal Plan cost and what do you get? | **$500 per semester.** It replaces the unlimited dining-hall meals with **$1,750 Dine In Dollars + $100 Bevo Pay per term**. *(doc 03)* |
+| 3 | Where can I study late at night near campus? | Multiple sources: **Bennu Coffee** (open 24 hours, lots of outlets), **PCL / Perry-Castañeda Library** (open nearly 24/7, has a coffee shop), and **Lola Savannah** (open until 11pm); dorm study lounges are also an option. *(docs 01, 04, 05)* |
+| 4 | Are the UT dorms cold, and what should I pack because of it? | Yes — the dorms are notoriously **freezing/over-air-conditioned** despite the Texas heat; students recommend bringing **an extra blanket or sweatshirt**, and a **jacket for the aggressively over-cooled auditoriums**. *(docs 08, 01)* |
+| 5 | *(Deliberate failure case — answer absent but topically adjacent)* How do I appeal or contest a parking ticket at UT Austin? | **Not covered by the corpus.** The transportation document explains shuttles, R/S/C permits, biking rules, and rideshare — but nothing about contesting/appealing a citation. A correct system should say the documents don't contain this. The likely failure: the parking-permit chunk is highly similar to the query, so retrieval returns it and the LLM may hallucinate an appeals process from it. |
 
 ---
 
