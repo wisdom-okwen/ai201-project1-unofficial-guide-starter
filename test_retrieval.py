@@ -16,11 +16,11 @@ from retrieve import get_collection, retrieve
 
 # The 5 evaluation questions from planning.md (Q5 is the planted failure case).
 EVAL_QUERIES = [
-    "At the dining halls, how should I pay to get a discount, and why avoid Jester City Limits?",
-    "How much does the optional Flex Meal Plan cost and what do you get?",
+    "How to pay for a dining discount, and why avoid Jester City Limits?",
+    "How much is the Flex Meal Plan and what do you get?",
     "Where can I study late at night near campus?",
-    "Are the UT dorms cold, and what should I pack because of it?",
-    "How do I appeal or contest a parking ticket at UT Austin?",  # failure case
+    "Are the dorms cold, and what should I pack?",
+    "How do I appeal a parking ticket at UT Austin?",  # failure case
 ]
 
 
