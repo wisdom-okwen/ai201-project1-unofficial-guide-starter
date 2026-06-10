@@ -16,5 +16,8 @@ env/
 chroma_db/
 chroma/
 
+# Regenerable pipeline artifact (rebuilt by build_chunks.py)
+chunks.json
+
 # macOS
 .DS_Store
