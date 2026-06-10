@@ -62,6 +62,12 @@ All sources are **unofficial** student/alumni guides (blogs, Her Campus, lifesty
 
 > Stretch idea (noted per instructions): compare semantic chunking against fixed-size and structure-aware (`===` header) chunking on the same 5 questions — this is the "Chunking Strategy Comparison" stretch feature.
 
+**Implementation notes (Milestone 3 — updated after building):**
+- **Final chunk count: 42** across 10 documents (min 50 / median 96 / max 172 words; 0 chunks under 40 or over 180; 0 empty). This is just under the checkpoint's "50" rule of thumb, but that heuristic assumes longer documents — our sources are short blog posts and lists, and a percentile sweep showed the corpus tops out around 45 chunks even with aggressive splitting. A median of ~96 words is a healthy, self-contained thought, so over-fragmenting to hit 50 would hurt, not help.
+- **Refinement added:** a section header (`=== … ===`) now always *starts* a new chunk. Pure sentence-level semantic boundaries occasionally stranded a header from its body (e.g., "=== Bicycling ===" ended one chunk while "Cost-effective and eco-friendly." opened the next). Forcing headers to lead their section fixed this; it's a light structural guard layered on top of the semantic boundaries, not a switch to structure-only chunking.
+- **Guardrail order matters:** undersized chunks are merged *first*, then oversized chunks are split *last* (into balanced pieces by cumulative word position), so the 180-word cap is a hard guarantee and splitting never leaves a sub-minimum tail.
+- Code: `ingest.py` (load/clean/header), `chunking.py` (semantic chunker), `build_chunks.py` (runs the pipeline, prints stats + 5 sample chunks, writes `chunks.json`).
+
 ---
 
 ## Retrieval Approach
@@ -141,8 +147,20 @@ All sources are **unofficial** student/alumni guides (blogs, Her Campus, lifesty
      "I'll give Claude my Chunking Strategy section and ask it to implement chunk_text()
      with my specified chunk size and overlap" is a plan. -->
 
-**Milestone 3 — Ingestion and chunking:**
+**Milestone 3 — Ingestion and chunking:** *(what I actually did)*
+- *Tool:* Claude (Claude Code).
+- *What I gave it:* the **Documents** and **Chunking Strategy** sentences from this planning.md — semantic chunking, boundary at the 90th-percentile cosine distance, ~180-word max / ~40-word min guardrails, and the header-prepend rule — plus the `Key: value` header format my `.txt` files use.
+- *What it produced:* `ingest.py` (load + parse header + light clean), `chunking.py` (the semantic chunker), and `build_chunks.py` (runs the pipeline, prints stats and 5 sample chunks).
+- *What I directed / changed:* I picked **semantic chunking** over the structure-aware approach it first suggested. After reading the printed chunks I had it fix two problems I spotted — a section header getting stranded from its body, and a guardrail-ordering bug that let one chunk exceed the 180-word cap. I checked the final numbers myself (42 chunks; none empty, too large, or too small).
 
-**Milestone 4 — Embedding and retrieval:**
+**Milestone 4 — Embedding and retrieval:** *(plan)*
+- *Tool:* Claude.
+- *What I'll give it:* the **Retrieval Approach** section — `all-MiniLM-L6-v2`, ChromaDB, top-k = 5 — and the chunk records from M3.
+- *Expected output:* code to embed the 42 chunks, store them with metadata (source, url, topic) in a local ChromaDB collection, and a `retrieve(query, k=5)` returning the top chunks with similarity scores.
+- *How I'll verify:* run my 5 eval questions through retrieval **before** wiring up generation, and read the returned chunks — especially that Q3 pulls from multiple study-spot docs and Q5 surfaces the parking-permit chunk.
 
-**Milestone 5 — Generation and interface:**
+**Milestone 5 — Generation and interface:** *(plan)*
+- *Tool:* Claude.
+- *What I'll give it:* the **Anticipated Challenges** section (the grounding/hallucination risk) and the requirement that every answer cite its source document(s).
+- *Expected output:* a grounded Groq `llama-3.3-70b-versatile` prompt that answers only from retrieved chunks, says "the guides don't cover this" when they don't, and lists sources — plus a simple CLI/notebook query interface.
+- *How I'll verify:* run all 5 questions end-to-end and confirm Q5 refuses to invent a parking-appeals process.
